@@ -1,0 +1,96 @@
+# Prefixes
+@prefix : <http://example.org/highway_code#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# --- DATATYPE PROPERTY DEFINITIONS (Corrected: Added :emergencyAbnormal) ---
+
+:stopBehindLine rdf:type owl:DatatypeProperty ;
+                rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
+                rdfs:range xsd:boolean ;
+                rdf:type owl:FunctionalProperty . # Added FunctionalProperty for single value
+
+:waitForSafeGap rdf:type owl:DatatypeProperty ;
+                rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
+                rdfs:range xsd:boolean ;
+                rdf:type owl:FunctionalProperty .
+
+:emergencyAbnormal rdf:type owl:DatatypeProperty ; # <--- FIX: Added missing definition
+                   rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
+                   rdfs:range xsd:boolean ;
+                   rdf:type owl:FunctionalProperty .
+
+# --- CLASSES ---
+
+:Vehicle rdf:type owl:Class.
+
+:VehicleAtJunctionWithStopAndSolidWhiteLine rdf:type owl:Class;
+  rdfs:subClassOf :Vehicle.
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant rdf:type owl:Class;
+  rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLine.
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant owl:disjointWith :VehicleAtJunctionWithStopAndSolidWhiteLineR171Violating .
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantDefault owl:disjointWith :VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantMitigated .
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantDefault rdf:type owl:Class;
+  owl:equivalentClass [
+    owl:intersectionOf ( [
+      rdf:type owl:Restriction;
+      owl:onProperty :stopBehindLine;
+      owl:hasValue "true"^^xsd:boolean;
+    ] [
+      rdf:type owl:Restriction;
+      owl:onProperty :waitForSafeGap;
+      owl:hasValue "true"^^xsd:boolean;
+    ] );
+    # rdf:type owl:Class; # Removed redundant statement
+  ];
+  rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant.
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantMitigated rdf:type owl:Class;
+  owl:equivalentClass [
+    owl:intersectionOf ( [
+      rdf:type owl:Class;
+      owl:unionOf ( [
+        rdf:type owl:Restriction;
+        owl:onProperty :stopBehindLine;
+        owl:hasValue "false"^^xsd:boolean;
+      ] [
+        rdf:type owl:Restriction;
+        owl:onProperty :waitForSafeGap;
+        owl:hasValue "false"^^xsd:boolean;
+      ] );
+    ] [
+      rdf:type owl:Restriction;
+      owl:onProperty :emergencyAbnormal;
+      owl:hasValue "true"^^xsd:boolean;
+    ] );
+    # rdf:type owl:Class; # Removed redundant statement
+  ];
+  rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant.
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171Violating rdf:type owl:Class;
+  owl:equivalentClass [
+    owl:intersectionOf ( [
+      rdf:type owl:Class;
+      owl:unionOf ( [
+        rdf:type owl:Restriction;
+        owl:onProperty :stopBehindLine;
+        owl:hasValue "false"^^xsd:boolean;
+      ] [
+        rdf:type owl:Restriction;
+        owl:onProperty :waitForSafeGap;
+        owl:hasValue "false"^^xsd:boolean;
+      ] );
+    ] [
+      rdf:type owl:Restriction;
+      owl:onProperty :emergencyAbnormal;
+      owl:hasValue "false"^^xsd:boolean;
+    ] );
+    # rdf:type owl:Class; # Removed redundant statement
+  ];
+  rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLine.

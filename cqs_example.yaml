@@ -1,0 +1,75 @@
+---
+- id: CQ_G_1_ALL_Hierarchy_Completeness
+  question: Which rule classes are not properly subclasses of their implied parent?
+    (Handles both R-code branches and Default/Mitigated leaves).
+  sparql: |
+    SELECT DISTINCT ?CandidateClass ?ImpliedParent WHERE { 
+      ?CandidateClass a owl:Class . 
+      # Match classes ending in standard suffixes 
+      FILTER(REGEX(STR(?CandidateClass), '(Compliant|Violating|Default|Mitigated)$')) 
+      
+      # LOGIC: If it ends in Default/Mitigated, Parent is the Compliant class. 
+      # If it ends in Compliant/Violating, Parent is the Root (stripping R-code). 
+      BIND( 
+        IF(REGEX(STR(?CandidateClass), '(Default|Mitigated)$'), 
+          IRI(REPLACE(STR(?CandidateClass), '(Default|Mitigated)$', '')), 
+          IRI(REPLACE(STR(?CandidateClass), 'R[0-9]+(Compliant|Violating)$', '')) 
+        ) AS ?ImpliedParent 
+      ) 
+      
+      # Check if the subclass relationship is missing 
+      FILTER NOT EXISTS { ?CandidateClass rdfs:subClassOf ?ImpliedParent } 
+      FILTER(?CandidateClass != ?ImpliedParent) 
+    }
+  expected: []
+- id: CQ_G_2_ALL_Violation_Disjointness
+  question: Which sibling outcomes are missing explicit 'disjointWith' assertions?
+  sparql: |
+    SELECT DISTINCT ?Parent ?ClassA ?ClassB WHERE { 
+      ?ClassA rdfs:subClassOf ?Parent . 
+      ?ClassB rdfs:subClassOf ?Parent . 
+      FILTER(?Parent != owl:Thing) 
+      FILTER(?ClassA != ?ClassB) 
+      # Ensure we are looking at Rule Outcomes 
+      FILTER(REGEX(STR(?ClassA), 'Compliant|Violating')) 
+      FILTER(REGEX(STR(?ClassB), 'Compliant|Violating')) 
+      
+      # The check: Are they disjoint? 
+      FILTER NOT EXISTS { ?ClassA owl:disjointWith ?ClassB } 
+      FILTER NOT EXISTS { ?ClassB owl:disjointWith ?ClassA } 
+    }
+  expected: []
+- id: CQ_N_G_1_Standard_Suffix_Check
+  question: Do all subclasses of the Root (and its children) use standard suffixes
+    (Compliant, Violating, Default, Mitigated)?
+  sparql: |
+    SELECT DISTINCT ?Class WHERE { 
+      # Find the Root by looking for the 'Violating' class 
+      ?ViolatingClass rdfs:subClassOf ?Root . 
+      FILTER(REGEX(STR(?ViolatingClass), 'R[0-9]+Violating$')) 
+      
+      # Check all things under this Root 
+      ?Class rdfs:subClassOf ?Root . 
+      FILTER(?Class != ?Root) 
+      
+      # Fail if it DOES NOT match one of the allowed suffixes 
+      FILTER(!REGEX(STR(?Class), '(Compliant|Violating|Default|Mitigated)$')) 
+    }
+  expected: []
+- id: CQ_N_G_3_Enforce_Rule_ID_Consistency
+  question: Does every outcome class with a Rule ID (e.g., R171) actually belong to
+    a Root with the correct Base Name?
+  sparql: |
+    SELECT DISTINCT ?Class ?ParentRoot WHERE { 
+      ?Class rdfs:subClassOf ?ParentRoot . 
+      FILTER(REGEX(STR(?Class), 'R[0-9]+')) 
+      FILTER(?ParentRoot != owl:Thing) 
+      # Ignore intermediate classes, compare to top Root 
+      FILTER(!REGEX(STR(?ParentRoot), 'R[0-9]+')) 
+      
+      # The string check: Does the Class name start with the Root name? 
+      BIND(STRAFTER(STR(?Class), '#') AS ?ClassName) 
+      BIND(STRAFTER(STR(?ParentRoot), '#') AS ?RootName) 
+      FILTER(!STRSTARTS(?ClassName, ?RootName)) 
+    }
+  expected: []
