@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import os
 from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
@@ -211,24 +212,44 @@ def _load_json(path: str):
     with open(path, "r", encoding="utf-8") as f:
         # return json.load(f)
         return yaml.safe_load(f)
+    
+
+def pretty_print_errors(report: Dict[str, Any]) -> str:
+    lines: List[str] = []
+    summary = report.get("summary", {})
+    total = summary.get("total", 0)
+    passed = summary.get("passed", 0)
+    lines.append(f"Competency Questions Validation Report:")
+    lines.append(f"  Passed {passed} out of {total} questions.")
+    for result in report.get("results", []):
+        if not result.get("passed", False):
+            qid = result.get("id", "unnamed")
+            error = result.get("error", "")
+            expected = result.get("expected", "")
+            actual = result.get("actual", "")
+            question = result.get("question", "")
+            lines.append(f"- Question ID: {qid}")
+            lines.append(f"  Question: {question}")
+            if error:
+                lines.append(f"  Error: {error}")
+            else:
+                lines.append(f"  Expected: {expected}")
+                lines.append(f"  Actual: {actual}")
+    return "\n".join(lines)
 
 
 def log_report(report: Dict[str, Any], out: Optional[str] = None) -> str:
     # Build the log as a list of lines, print them, and return as a single string.
     lines: List[str] = []
-    report_path = out or "validation_report.json"
+    report_path = os.path.join(out, "validation_report.json")
     try:
         with open(report_path, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2, ensure_ascii=False)
-        msg = f"Wrote report to {report_path}"
-        print(msg)
-        lines.append(msg)
+        LOG.info(f"Wrote report to {report_path}")
     except Exception as e:
-        msg = f"Failed to write report to {report_path}: {e}"
-        print(msg)
-        lines.append(msg)
+        LOG.error(f"Failed to write report to {report_path}: {e}")
 
-    return "\n".join(lines)
+    return pretty_print_errors(report)
 
 
 def main():

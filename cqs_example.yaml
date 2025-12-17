@@ -39,7 +39,7 @@
       FILTER NOT EXISTS { ?ClassB owl:disjointWith ?ClassA } 
     }
   expected: []
-- id: CQ_N_G_1_Standard_Suffix_Check
+- id: CQ_G_1_Standard_Suffix_Check
   question: Do all subclasses of the Root (and its children) use standard suffixes
     (Compliant, Violating, Default, Mitigated)?
   sparql: |
@@ -56,7 +56,7 @@
       FILTER(!REGEX(STR(?Class), '(Compliant|Violating|Default|Mitigated)$')) 
     }
   expected: []
-- id: CQ_N_G_3_Enforce_Rule_ID_Consistency
+- id: CQ_G_3_Enforce_Rule_ID_Consistency
   question: Does every outcome class with a Rule ID (e.g., R171) actually belong to
     a Root with the correct Base Name?
   sparql: |
@@ -71,5 +71,26 @@
       BIND(STRAFTER(STR(?Class), '#') AS ?ClassName) 
       BIND(STRAFTER(STR(?ParentRoot), '#') AS ?RootName) 
       FILTER(!STRSTARTS(?ClassName, ?RootName)) 
+    }
+  expected: []
+- id: CQ_G_4_ALL_Comprehensive_Rule_Coverage
+  question: Are there any Rule Roots missing either a Compliant or Violating subclass?
+  sparql: |
+    SELECT DISTINCT ?Root WHERE { 
+      # Find all Roots by looking for classes with R-code but no suffix 
+      ?Root a owl:Class . 
+      FILTER(REGEX(STR(?Root), 'R[0-9]+$')) 
+      
+      # Check for missing Compliant subclass 
+      FILTER NOT EXISTS { 
+        ?CompliantClass rdfs:subClassOf ?Root . 
+        FILTER(REGEX(STR(?CompliantClass), 'Compliant$')) 
+      } 
+      
+      # Check for missing Violating subclass 
+      FILTER NOT EXISTS { 
+        ?ViolatingClass rdfs:subClassOf ?Root . 
+        FILTER(REGEX(STR(?ViolatingClass), 'Violating$')) 
+      } 
     }
   expected: []

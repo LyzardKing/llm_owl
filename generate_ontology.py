@@ -41,7 +41,7 @@ def load_system_prompt(path="system_step-by-step.md"):
         return f.read()
 
 
-def call_llm(system_prompt, text, model=None):
+def call_llm(system_prompt, text, dest, model=None):
     client = get_client()
     model = model or os.getenv("LLM_MODEL", "gpt-4o-mini")
     messages: Iterable[ChatCompletionMessageParam] = [
@@ -57,8 +57,13 @@ def call_llm(system_prompt, text, model=None):
             ),
         },
     ]
+
+    with open(os.path.join(dest, "LLM_prompt.md"), "a+", encoding="utf-8") as f:
+        for msg in messages:
+            f.write(f"# {msg['role'].upper()}\n{msg['content']}\n\n")
+
     resp = client.chat.completions.create(
-        model=model, messages=messages, temperature=0.0, max_tokens=4000
+        model=model, messages=messages# temperature=0.0, max_tokens=4000
     )
     return resp.choices[0].message.content
 
@@ -91,7 +96,7 @@ def save_outputs(json_text, ttl_text, dest="dest", out_prefix="output"):
     return jpath, tpath
 
 
-def validate_output(tpath) -> str | None:
+def validate_output(tpath: str, dest: str) -> str | None:
     print("Validating Turtle file:", tpath)
     if not validate_ttl(tpath):
         print("Generated Turtle file is invalid.")
@@ -102,7 +107,8 @@ def validate_output(tpath) -> str | None:
     )
     if not success:
         print("Some competency questions failed.")
-        error_msg = log_report(cq_validation)
+        error_msg = log_report(cq_validation, dest)
+        print(error_msg)
         return error_msg
     print("All competency questions passed.")
     return None
@@ -125,7 +131,7 @@ The Turtle code has the following issues:
 Please provide a corrected version of the OWL Turtle code that resolves these issues.
 """
     try:
-        fixed_content = call_llm(system_prompt, user_prompt, model=LLM_MODEL)
+        fixed_content = call_llm(system_prompt, user_prompt, dest, model=LLM_MODEL)
     except Exception as e:
         print("LLM call failed during fixing:", str(e))
         sys.exit(1)
@@ -140,11 +146,11 @@ Please provide a corrected version of the OWL Turtle code that resolves these is
         print("No OWL Turtle detected in fixed response; check the raw output below:\n")
     else:
         print("Saved fixed OWL Turtle to:", tpath)
-    error_msg = validate_output(tpath)
+    error_msg = validate_output(tpath, dest)
     if error_msg and step < max_steps:
         step += 1
         print("Recursively calling LLM to fix issues...")
-        llm_fix_and_validate(fixed_content, step, max_steps)
+        llm_fix_and_validate(fixed_content, dest, error_msg, step, max_steps)
 
 
 def llm_setup_and_validate(args):
@@ -161,7 +167,7 @@ def llm_setup_and_validate(args):
 
     system_prompt = load_system_prompt(args.system)
     try:
-        content = call_llm(system_prompt, text, model=args.model)
+        content = call_llm(system_prompt, text, dest=args.dest, model=args.model)
     except Exception as e:
         print("LLM call failed:", str(e))
         sys.exit(1)
@@ -176,10 +182,10 @@ def llm_setup_and_validate(args):
         print("No OWL Turtle detected in response; check the raw output below:\n")
     else:
         print("Saved OWL Turtle to:", tpath)
-    error_msg = validate_output(tpath)
+    error_msg = validate_output(tpath, args.dest)
     if error_msg and args.recursive:
         print("Recursively calling LLM to fix issues...")
-        llm_fix_and_validate(content, args.dest, error_msg)
+        llm_fix_and_validate(ttl_part, args.dest, error_msg)
 
 
 def main():
@@ -201,7 +207,7 @@ def main():
     p.add_argument(
         "--validate-only", action="store_true", help="Only validate existing TTL file"
     )
-    p.add_argument("--dest", action="store", default="dest", help="Destination folder")
+    p.add_argument("--dest", action="store", help="Destination folder")
     p.add_argument(
         "--cq-file",
         help="Path to competency questions JSON file",
@@ -213,8 +219,18 @@ def main():
         help="Recursively validate until all CQs pass",
     )
     args = p.parse_args()
-    if not os.path.isdir(args.dest):
-        os.makedirs(args.dest)
+
+    if not args.dest:
+        args.dest = os.path.join("dest", f"dest_{LLM_MODEL}_{args.name}")
+    if os.path.exists(args.dest) and not args.validate_only:
+        # If the destination exists, create a new unique folder
+        base_dest = args.dest
+        i = 1
+        while os.path.exists(args.dest):
+            args.dest = f"{base_dest}_{i}"
+            i += 1
+        
+    os.makedirs(args.dest, exist_ok=True)
 
     if not args.validate_only:
         print("Calling LLM...")
@@ -223,7 +239,7 @@ def main():
     tpath = os.path.join(args.dest, f"{args.name}.ttl")
     print("Validating existing TTL file:", tpath)
 
-    validate_output(tpath)
+    validate_output(tpath, args.dest)
 
 
 if __name__ == "__main__":

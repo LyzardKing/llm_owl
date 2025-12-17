@@ -1,23 +1,24 @@
-# Prefixes
+# --- PREFIXES ---
+
 @prefix : <http://example.org/highway_code#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-# --- DATATYPE PROPERTY DEFINITIONS (Corrected: Added :emergencyAbnormal) ---
+# --- DATATYPE PROPERTY DEFINITIONS ---
 
 :stopBehindLine rdf:type owl:DatatypeProperty ;
                 rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
                 rdfs:range xsd:boolean ;
-                rdf:type owl:FunctionalProperty . # Added FunctionalProperty for single value
+                rdf:type owl:FunctionalProperty .
 
 :waitForSafeGap rdf:type owl:DatatypeProperty ;
                 rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
                 rdfs:range xsd:boolean ;
                 rdf:type owl:FunctionalProperty .
 
-:emergencyAbnormal rdf:type owl:DatatypeProperty ; # <--- FIX: Added missing definition
+:emergencyAbnormal rdf:type owl:DatatypeProperty ;
                    rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
                    rdfs:range xsd:boolean ;
                    rdf:type owl:FunctionalProperty .
@@ -47,7 +48,6 @@
       owl:onProperty :waitForSafeGap;
       owl:hasValue "true"^^xsd:boolean;
     ] );
-    # rdf:type owl:Class; # Removed redundant statement
   ];
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant.
 
@@ -69,7 +69,6 @@
       owl:onProperty :emergencyAbnormal;
       owl:hasValue "true"^^xsd:boolean;
     ] );
-    # rdf:type owl:Class; # Removed redundant statement
   ];
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant.
 
@@ -91,6 +90,5 @@
       owl:onProperty :emergencyAbnormal;
       owl:hasValue "false"^^xsd:boolean;
     ] );
-    # rdf:type owl:Class; # Removed redundant statement
   ];
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLine.

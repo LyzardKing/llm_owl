@@ -91,12 +91,18 @@ Convert the provided legal text into OWL for clarity and precision.
 ```
 :stopBehindLine rdf:type owl:DatatypeProperty ;
                 rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
-                rdfs:range xsd:boolean .
-
+                rdfs:range xsd:boolean ;
+                rdf:type owl:FunctionalProperty .
 
 :waitForSafeGap rdf:type owl:DatatypeProperty ;
                 rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
-                rdfs:range xsd:boolean .
+                rdfs:range xsd:boolean ;
+                rdf:type owl:FunctionalProperty .
+
+:emergencyAbnormal rdf:type owl:DatatypeProperty ;
+                   rdfs:domain :VehicleAtJunctionWithStopAndSolidWhiteLine ;
+                   rdfs:range xsd:boolean ;
+                   rdf:type owl:FunctionalProperty .
 ```
 
 **Step 5: Build the rules**
@@ -110,6 +116,10 @@ Convert the provided legal text into OWL for clarity and precision.
 :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant rdf:type owl:Class;
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLine.
 
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant owl:disjointWith :VehicleAtJunctionWithStopAndSolidWhiteLineR171Violating .
+
+:VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantDefault owl:disjointWith :VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantMitigated .
+
 :VehicleAtJunctionWithStopAndSolidWhiteLineR171CompliantDefault rdf:type owl:Class;
   owl:equivalentClass [
     owl:intersectionOf ( [
@@ -121,7 +131,6 @@ Convert the provided legal text into OWL for clarity and precision.
       owl:onProperty :waitForSafeGap;
       owl:hasValue "true"^^xsd:boolean;
     ] );
-    rdf:type owl:Class;
   ];
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant.
 
@@ -143,7 +152,6 @@ Convert the provided legal text into OWL for clarity and precision.
       owl:onProperty :emergencyAbnormal;
       owl:hasValue "true"^^xsd:boolean;
     ] );
-    rdf:type owl:Class;
   ];
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLineR171Compliant.
 
@@ -165,7 +173,6 @@ Convert the provided legal text into OWL for clarity and precision.
       owl:onProperty :emergencyAbnormal;
       owl:hasValue "false"^^xsd:boolean;
     ] );
-    rdf:type owl:Class;
   ];
   rdfs:subClassOf :VehicleAtJunctionWithStopAndSolidWhiteLine.
 ```

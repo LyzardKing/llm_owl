@@ -12,6 +12,7 @@ import requests
 
 def check_consistency(ontology: rdflib.Graph) -> list[str]:
     """Check if an OWL ontology is internally consistent."""
+    print("Checking ontology consistency...")
     world = owlready2.World()
     graph = world.as_rdflib_graph()
     with world.get_ontology("http://localhost/"):
@@ -96,6 +97,7 @@ def check_pitfalls(
 
 
 def _is_owl(ontology: rdflib.Graph) -> bool:
+    print(ontology)
     return (None, rdflib.RDF.type, rdflib.OWL.Ontology) in ontology
 
 
@@ -118,10 +120,10 @@ def main(argv: typing.Optional[typing.Sequence[str]] = None) -> int:
     retv = 0
     for filename in args.filenames:
         ontology = rdflib.Graph()
-        ontology.parse(filename)
+        ontology.parse(filename, format="turtle")
         errors = []
-        if _is_owl(ontology):
-            errors.extend(check_consistency(ontology=ontology))
+        # if _is_owl(ontology):
+        errors.extend(check_consistency(ontology=ontology))
         errors.extend(check_pitfalls(ontology=ontology, level=args.level))
         if errors:
             retv = 1
